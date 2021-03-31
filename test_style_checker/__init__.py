@@ -77,12 +77,12 @@ def function_test_validator(num: int, read_line: List[str]) -> List[str]:
     step = 6
     start = num - step if num - step > 0 else 0
     testcase_decorator = '\n'.join(read_line[start: num])
-    case_id_decorator = re.findall(r'@testcase\(\s*[\'\"]([A-Z]{2,5}-\d+)[\'\"],\s*', testcase_decorator)
-    if not case_id_decorator:
+    if case_id_decorator := re.findall(r'@testcase\(\s*[\'\"]([A-Z]{2,5}-\d+)[\'\"],\s*', testcase_decorator):
+        if case_id_decorator[0] in CheckerTestFile.cases:
+            errors.append(ERROR['MC104'].format(case_id_decorator[0]))
+        CheckerTestFile.cases.append(case_id_decorator[0])
+    else:
         errors.append(ERROR['MC103'])
-    if case_id_decorator[0] in CheckerTestFile.cases:
-        errors.append(ERROR['MC104'].format(case_id_decorator[0]))
-    CheckerTestFile.cases.append(case_id_decorator[0])
     return errors
 
 
