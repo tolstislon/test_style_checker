@@ -47,6 +47,7 @@ class CheckerTestFile:
     def __init__(self, tree, filename='(none)', file_tokens=None):
         self.filename = 'stdin' if filename in ('stdin', '-', None) else filename
         self.tree = tree
+        print(self.tree)
         self.tokens = file_tokens
 
     def run(self):
@@ -61,11 +62,11 @@ class CheckerTestFile:
             else:
                 errors = []
                 path = Path(self.filename)
-                if path.name in self.files_name:
-                    errors.append((-1, 0, ERROR['MC101'].format(str(self.files_name[path.name]), str(self.filename))))
-                else:
-                    self.files_name[path.name] = self.filename
-
+                if path.name in CheckerTestFile.files_name:
+                    errors.append(
+                        (-1, 0, ERROR['MC101'].format(str(CheckerTestFile.files_name[path.name]), str(self.filename)))
+                    )
+                CheckerTestFile.files_name[path.name] = self.filename
                 read_line = list(pycodestyle.readlines(self.filename))
                 for line_number, line in enumerate(read_line):
                     if line.strip().startswith('def'):
@@ -93,7 +94,7 @@ def function_test_validator(num: int, read_line: list[str], file_path: Path) -> 
             errors.append(ERROR['MC102'].format(func_name))
 
     abs_path = file_path.absolute()
-    if not any([abs_path.match(p) for p in CheckerTestFile.ignore_cases_path]):
+    if not any([abs_path.is_relative_to(Path(p)) for p in CheckerTestFile.ignore_cases_path]):
         step = 6
         start = num - step if num - step > 0 else 0
         testcase_decorator = '\n'.join(read_line[start: num])
