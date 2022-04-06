@@ -32,7 +32,7 @@ class CheckerTestFile:
         """Auto Call Validation"""
 
         formatted_filename = self.filename.replace('\\', '_').replace('/', '_')
-        if re.match(r'.*(tests_ui).+', formatted_filename):
+        if re.match(r'.*(tests_ui|tests_api).+', formatted_filename):
             sanitized_filename = os.path.splitext(os.path.basename(self.filename))[0]
             if not sanitized_filename.startswith('test_'):
                 if sanitized_filename not in ('conftest', '__init__'):
