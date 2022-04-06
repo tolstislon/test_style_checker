@@ -19,9 +19,30 @@ class CheckerTestFile:
     files_name = {}
     cases = set()
     case_allure = set()
+    ignore_cases_path = []
 
     name = dist_name
     version = __version__
+
+    @classmethod
+    def add_options(cls, parser):
+        parser.add_option(
+            "--ignore-cases-path",
+            default="",
+            dest="ignore_cases_path",
+            parse_from_config=True,
+            comma_separated_list=True,
+            normalize_paths=True,
+            help="Ignore @testcase and @case",
+        )
+
+    @classmethod
+    def parse_options(cls, options):
+
+        names = options.ignore_cases_path
+        if not isinstance(names, list):
+            names = options.ignore_cases_path.split(",")
+        cls.ignore_cases_path = names
 
     def __init__(self, tree, filename='(none)', file_tokens=None):
         self.filename = 'stdin' if filename in ('stdin', '-', None) else filename
@@ -48,41 +69,44 @@ class CheckerTestFile:
                 read_line = list(pycodestyle.readlines(self.filename))
                 for line_number, line in enumerate(read_line):
                     if line.strip().startswith('def'):
-                        errors += function_validator(line, line_number, read_line)
+                        errors += function_validator(line, line_number, read_line, path)
                 for error in errors:
                     yield error[0] + 1, error[1], error[2], type(self)
 
 
-def function_validator(line: str, num: int, read_line: list[str]) -> list[tuple[int, int, str]]:
+def function_validator(line: str, num: int, read_line: list[str], file_path: Path) -> list[tuple[int, int, str]]:
     errors = []
     start = line.find('def')
     col = start + len('def') + 1
     if line[start:].startswith('def test'):
-        errors.extend([(num, col, i) for i in function_test_validator(num, read_line)])
+        errors.extend([(num, col, i) for i in function_test_validator(num, read_line, file_path)])
     else:
         errors.extend([(num, col, i) for i in function_other_validator(num, read_line)])
     return errors
 
 
-def function_test_validator(num: int, read_line: list[str]) -> list[str]:
+def function_test_validator(num: int, read_line: list[str], file_path: Path) -> list[str]:
     errors = []
     if func_name := re.findall(r'def\stest(.+)\(', read_line[num]):
         func_name_list = func_name[0].replace('_', '')
         if len(func_name_list) < 3:
             errors.append(ERROR['MC102'].format(func_name))
-    step = 6
-    start = num - step if num - step > 0 else 0
-    testcase_decorator = '\n'.join(read_line[start: num])
-    if case_id_decorator := re.findall(r'@testcase\(\s*[\'\"]([A-Z]{2,5}-\d+)[\'\"],\s*', testcase_decorator):
-        if case_id_decorator[0] in CheckerTestFile.cases:
-            errors.append(ERROR['MC104'].format(case_id_decorator[0]))
-        CheckerTestFile.cases.add(case_id_decorator[0])
-    elif case_id_decorator := re.findall(r'@case\(id=[\'\"]?(\d+)[\'\"]?.*\stitle=.*', testcase_decorator):
-        if case_id_decorator[0] in CheckerTestFile.case_allure:
-            errors.append(ERROR['MC104'].format(case_id_decorator[0]))
-        CheckerTestFile.case_allure.add(case_id_decorator[0])
-    else:
-        errors.append(ERROR['MC103'])
+
+    abs_path = file_path.absolute()
+    if not any([abs_path.match(p) for p in CheckerTestFile.ignore_cases_path]):
+        step = 6
+        start = num - step if num - step > 0 else 0
+        testcase_decorator = '\n'.join(read_line[start: num])
+        if case_id_decorator := re.findall(r'@testcase\(\s*[\'\"]([A-Z]{2,5}-\d+)[\'\"],\s*', testcase_decorator):
+            if case_id_decorator[0] in CheckerTestFile.cases:
+                errors.append(ERROR['MC104'].format(case_id_decorator[0]))
+            CheckerTestFile.cases.add(case_id_decorator[0])
+        elif case_id_decorator := re.findall(r'@case\(id=[\'\"]?(\d+)[\'\"]?.*\stitle=.*', testcase_decorator):
+            if case_id_decorator[0] in CheckerTestFile.case_allure:
+                errors.append(ERROR['MC104'].format(case_id_decorator[0]))
+            CheckerTestFile.case_allure.add(case_id_decorator[0])
+        else:
+            errors.append(ERROR['MC103'])
     return errors
 
 
