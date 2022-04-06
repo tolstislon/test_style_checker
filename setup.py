@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="test_style_checker",
-    version="0.1.3",
+    version="0.1.4",
     description="flake8 plugin",
     long_description="flake8 plugin",
     author="tolstislon",

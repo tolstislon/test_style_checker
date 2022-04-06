@@ -47,7 +47,6 @@ class CheckerTestFile:
     def __init__(self, tree, filename='(none)', file_tokens=None):
         self.filename = 'stdin' if filename in ('stdin', '-', None) else filename
         self.tree = tree
-        print(self.tree)
         self.tokens = file_tokens
 
     def run(self):
