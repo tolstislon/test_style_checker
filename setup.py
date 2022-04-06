@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='test_style_checker',
-    version='0.0.2',
+    version='0.1.0',
     description="flake8 plugin",
     long_description='flake8 plugin',
     author="tolstislon",
@@ -15,8 +15,8 @@ setup(
     },
     packages=['test_style_checker'],
     include_package_data=True,
-    install_requires=["flake8>=3.8.4"],
-    python_requires='>=3.8',
+    install_requires=["flake8>=4.0.1"],
+    python_requires='>=3.10',
     license="MIT License",
     zip_safe=False,
     classifiers=[

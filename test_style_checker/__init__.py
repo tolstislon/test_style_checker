@@ -1,7 +1,6 @@
 import os.path
 import re
 from pathlib import Path
-from typing import List, Tuple
 
 import pycodestyle  # noqa
 from pkg_resources import DistributionNotFound, get_distribution
@@ -18,7 +17,8 @@ except DistributionNotFound:
 class CheckerTestFile:
     """Base class"""
     files_name = {}
-    cases = []
+    cases = set()
+    case_allure = set()
 
     name = dist_name
     version = __version__
@@ -49,15 +49,11 @@ class CheckerTestFile:
                 for line_number, line in enumerate(read_line):
                     if line.strip().startswith('def'):
                         errors += function_validator(line, line_number, read_line)
-
-                # if self.tokens:
-                #     errors += token_parser(self.tokens)
-                #
                 for error in errors:
                     yield error[0] + 1, error[1], error[2], type(self)
 
 
-def function_validator(line: str, num: int, read_line: List[str]) -> List[Tuple[int, int, str]]:
+def function_validator(line: str, num: int, read_line: list[str]) -> list[tuple[int, int, str]]:
     errors = []
     start = line.find('def')
     col = start + len('def') + 1
@@ -68,7 +64,7 @@ def function_validator(line: str, num: int, read_line: List[str]) -> List[Tuple[
     return errors
 
 
-def function_test_validator(num: int, read_line: List[str]) -> List[str]:
+def function_test_validator(num: int, read_line: list[str]) -> list[str]:
     errors = []
     if func_name := re.findall(r'def\stest(.+)\(', read_line[num]):
         func_name_list = func_name[0].replace('_', '')
@@ -80,13 +76,17 @@ def function_test_validator(num: int, read_line: List[str]) -> List[str]:
     if case_id_decorator := re.findall(r'@testcase\(\s*[\'\"]([A-Z]{2,5}-\d+)[\'\"],\s*', testcase_decorator):
         if case_id_decorator[0] in CheckerTestFile.cases:
             errors.append(ERROR['MC104'].format(case_id_decorator[0]))
-        CheckerTestFile.cases.append(case_id_decorator[0])
+        CheckerTestFile.cases.add(case_id_decorator[0])
+    elif case_id_decorator := re.findall(r'@case\(id=[\'\"]?(\d+)[\'\"]?.*\stitle=.*', testcase_decorator):
+        if case_id_decorator[0] in CheckerTestFile.case_allure:
+            errors.append(ERROR['MC104'].format(case_id_decorator[0]))
+        CheckerTestFile.case_allure.add(case_id_decorator[0])
     else:
         errors.append(ERROR['MC103'])
     return errors
 
 
-def function_other_validator(num: int, read_line: List[str]) -> List[str]:
+def function_other_validator(num: int, read_line: list[str]) -> list[str]:
     errors = []
     step = 3
     start = num - step if num - step > 0 else 0
