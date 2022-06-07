@@ -105,6 +105,8 @@ def function_test_validator(num: int, read_line: list[str], file_path: Path) -> 
             if case_id_decorator[0] in CheckerTestFile.case_allure:
                 errors.append(ERROR['MC104'].format(case_id_decorator[0]))
             CheckerTestFile.case_allure.add(case_id_decorator[0])
+        elif re.findall(r'@CASE', testcase_decorator):  # TODO
+            pass
         else:
             errors.append(ERROR['MC103'])
     return errors
